@@ -15,20 +15,20 @@ export const authenticateToken = ({ req }: any) => {
 
   // If no token is provided, return the request object as is
   if (!token) {
-    return req;
+    console.log('No token provided');
+    return req; // Return the request without user
   }
 
   // Try to verify the token
   try {
-    const { data }: any = jwt.verify(token, process.env.JWT_SECRET_KEY || '', { maxAge: '2hr' });
-    // If the token is valid, attach the user data to the request object
-    req.user = data;
-  } catch (err) {
-    // If the token is invalid, log an error message
-    console.log('Invalid token');
+    const { data }: any = jwt.verify(token, process.env.JWT_SECRET_KEY || '', { maxAge: '2h' });
+    req.user = data; // Attach user data to request
+    console.log('Authenticated user:', req.user); // Debugging
+  } catch (error: any) {
+    console.error('Invalid token:', error.message); // Debugging
+    req.user = null; // Clear user if token invalid
   }
 
-  // Return the request object
   return req;
 };
 
@@ -43,7 +43,9 @@ export const signToken = (username: string, email: string, _id: unknown) => {
 
 export class AuthenticationError extends GraphQLError {
   constructor(message: string) {
-    super(message, undefined, undefined, undefined, ['UNAUTHENTICATED']);
+    super(message, {
+      extensions: { code: 'UNAUTHENTICATED' }
+    });
     Object.defineProperty(this, 'name', { value: 'AuthenticationError' });
   }
 };

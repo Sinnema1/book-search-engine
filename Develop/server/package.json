@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "watch": "nodemon dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "npm run build && node dist/seeds/cleanDB.js",
+    "seed": "npm run build && node dist/seeds/index.js"
   },
   "keywords": [],
   "author": "",

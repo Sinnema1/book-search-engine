@@ -1,16 +1,25 @@
-import db from "../config/connection.js";
-import user from "../models/index.js";
-import cleanDB from "./cleanDB.js";
+import bcrypt from 'bcrypt';
+import User from '../models/User.js';
+import fs from 'fs';
 
-const { User } = user;
+export const seedDatabase = async () => {
+  try {
+    const userData = JSON.parse(fs.readFileSync('./src/seeds/userData.json', 'utf-8'));
 
-import techData from './techData.json' assert { type: "json" };
+    // Manually hash passwords before inserting
+    const hashedUsers = await Promise.all(
+      userData.users.map(async (user: any) => ({
+        ...user,
+        password: await bcrypt.hash(user.password, 10),
+      }))
+    );
 
-db.once('open', async () => {
-  await cleanDB('User', 'teches');
+    await User.deleteMany({});
+    console.log('User collection cleared');
 
-  await User.insertMany(techData);
-
-  console.log('Technologies seeded!');
-  process.exit(0);
-});
+    await User.insertMany(hashedUsers);
+    console.log('User data seeded successfully');
+  } catch (err) {
+    console.error('Error seeding the database:', err);
+  }
+};
