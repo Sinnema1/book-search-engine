@@ -1,24 +1,39 @@
-import { useState, useEffect } from 'react';
-import { useLazyQuery, useMutation } from '@apollo/client';
-import { Container, Col, Form, Button, Card, Row, Spinner } from 'react-bootstrap';
+import { useState, useEffect } from "react";
+import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
+import {
+  Container,
+  Col,
+  Form,
+  Button,
+  Card,
+  Row,
+  Spinner,
+} from "react-bootstrap";
 
-import Auth from '../utils/auth';
-import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
-import { SAVE_BOOK } from '../utils/mutations';
-import { SEARCH_GOOGLE_BOOKS } from '../utils/queries';
-import type { Book } from '../models/Book';
+import Auth from "../utils/auth";
+import { SAVE_BOOK } from "../utils/mutations";
+import { SEARCH_GOOGLE_BOOKS, GET_ME } from "../utils/queries";
+import type { Book } from "../models/Book";
 
 const SearchBooks = () => {
   const [searchedBooks, setSearchedBooks] = useState<Book[]>([]);
-  const [searchInput, setSearchInput] = useState('');
-  const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
+  const [searchInput, setSearchInput] = useState("");
+  const [savedBookIds, setSavedBookIds] = useState<string[]>([]);
 
-  const [searchGoogleBooks, { loading, data }] = useLazyQuery(SEARCH_GOOGLE_BOOKS);
+  const { data: userData, loading: userLoading } = useQuery(GET_ME);
+  const [searchGoogleBooks, { loading: searchLoading, data }] =
+    useLazyQuery(SEARCH_GOOGLE_BOOKS);
   const [saveBook] = useMutation(SAVE_BOOK);
 
   useEffect(() => {
-    return () => saveBookIds(savedBookIds);
-  }, [savedBookIds]);
+    if (userData?.me) {
+      // Extract saved book IDs from the user's data
+      const userSavedBookIds = userData.me.savedBooks.map(
+        (book: Book) => book.bookId
+      );
+      setSavedBookIds(userSavedBookIds);
+    }
+  }, [userData]);
 
   useEffect(() => {
     if (data?.searchGoogleBooks) {
@@ -35,15 +50,18 @@ const SearchBooks = () => {
 
     try {
       await searchGoogleBooks({ variables: { query: searchInput } });
-      setSearchInput('');
+      setSearchInput("");
     } catch (err) {
-      console.error('Error searching Google Books:', err);
+      console.error("Error searching Google Books:", err);
     }
   };
 
   const handleSaveBook = async (bookId: string) => {
     const bookToSave = searchedBooks.find((book) => book.bookId === bookId);
     if (!bookToSave) return;
+
+    // Remove __typename field
+    const { __typename, ...sanitizedBook } = bookToSave;
 
     const token = Auth.loggedIn() ? Auth.getToken() : null;
     if (!token) {
@@ -52,12 +70,13 @@ const SearchBooks = () => {
 
     try {
       await saveBook({
-        variables: { input: bookToSave },
+        variables: { input: sanitizedBook },
       });
 
+      // Update savedBookIds after saving the book
       setSavedBookIds([...savedBookIds, bookToSave.bookId]);
     } catch (err) {
-      console.error('Error saving book:', err);
+      console.error("Error saving book:", err);
     }
   };
 
@@ -89,7 +108,7 @@ const SearchBooks = () => {
       </div>
 
       <Container>
-        {loading ? (
+        {searchLoading || userLoading ? (
           <div className="d-flex justify-content-center align-items-center pt-5">
             <Spinner animation="border" role="status" />
             <span className="ms-2">Loading...</span>
@@ -99,7 +118,7 @@ const SearchBooks = () => {
             <h2 className="pt-5">
               {searchedBooks.length
                 ? `Viewing ${searchedBooks.length} results:`
-                : 'Search for a book to begin'}
+                : "Search for a book to begin"}
             </h2>
             <Row>
               {searchedBooks.map((book) => (
@@ -114,23 +133,41 @@ const SearchBooks = () => {
                     )}
                     <Card.Body>
                       <Card.Title>{book.title}</Card.Title>
-                      <p className="small">Authors: {book.authors.join(', ')}</p>
+                      <p className="small">
+                        Authors: {book.authors.join(", ")}
+                      </p>
                       <Card.Text>{book.description}</Card.Text>
-                      {Auth.loggedIn() && (
-                        <Button
-                          disabled={savedBookIds?.some(
-                            (savedBookId: string) => savedBookId === book.bookId
-                          )}
-                          className="btn-block btn-info"
-                          onClick={() => handleSaveBook(book.bookId)}
+
+                      <div className="d-flex flex-column">
+                        {/* Google Books Link */}
+                        <a
+                          href={book.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-info mb-2"
                         >
-                          {savedBookIds?.some(
-                            (savedBookId: string) => savedBookId === book.bookId
-                          )
-                            ? 'This book has already been saved!'
-                            : 'Save this Book!'}
-                        </Button>
-                      )}
+                          View on Google Books
+                        </a>
+
+                        {/* Save Button */}
+                        {Auth.loggedIn() && (
+                          <Button
+                            disabled={savedBookIds?.some(
+                              (savedBookId: string) =>
+                                savedBookId === book.bookId
+                            )}
+                            className="btn-info"
+                            onClick={() => handleSaveBook(book.bookId)}
+                          >
+                            {savedBookIds?.some(
+                              (savedBookId: string) =>
+                                savedBookId === book.bookId
+                            )
+                              ? "This book has already been saved!"
+                              : "Save this Book!"}
+                          </Button>
+                        )}
+                      </div>
                     </Card.Body>
                   </Card>
                 </Col>

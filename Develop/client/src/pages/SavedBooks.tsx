@@ -1,13 +1,13 @@
-import { useQuery, useMutation } from '@apollo/client';
-import { Container, Card, Button, Row, Col } from 'react-bootstrap';
+import { useQuery, useMutation } from "@apollo/client";
+import { Container, Card, Button, Row, Col } from "react-bootstrap";
 
-import { GET_ME } from '../utils/queries';
-import { REMOVE_BOOK } from '../utils/mutations';
-import { removeBookId } from '../utils/localStorage';
+import { GET_ME } from "../utils/queries";
+import { REMOVE_BOOK } from "../utils/mutations";
+import { removeBookId } from "../utils/localStorage";
 
 const SavedBooks = () => {
   const { data, loading, error } = useQuery(GET_ME, {
-    fetchPolicy: 'network-only', // Ensures fresh data is fetched on every load
+    fetchPolicy: "network-only", // Ensures fresh data is fetched on every load
   });
   const [removeBook] = useMutation(REMOVE_BOOK);
 
@@ -39,7 +39,7 @@ const SavedBooks = () => {
         removeBookId(bookId);
       }
     } catch (err) {
-      console.error('Error removing book:', err);
+      console.error("Error removing book:", err);
     }
   };
 
@@ -56,7 +56,7 @@ const SavedBooks = () => {
           <h1>
             {userData?.username
               ? `Viewing ${userData.username}'s saved books!`
-              : 'Viewing saved books!'}
+              : "Viewing saved books!"}
           </h1>
         </Container>
       </div>
@@ -64,12 +64,12 @@ const SavedBooks = () => {
         <h2 className="pt-5">
           {userData?.savedBooks?.length
             ? `Viewing ${userData.savedBooks.length} saved ${
-                userData.savedBooks.length === 1 ? 'book' : 'books'
+                userData.savedBooks.length === 1 ? "book" : "books"
               }:`
-            : 'You have no saved books!'}
+            : "You have no saved books!"}
         </h2>
         <Row>
-          {userData?.savedBooks?.map((book: any) => (
+          {userData.savedBooks.map((book: any) => (
             <Col md="4" key={book.bookId}>
               <Card border="dark">
                 {book.image && (
@@ -81,14 +81,28 @@ const SavedBooks = () => {
                 )}
                 <Card.Body>
                   <Card.Title>{book.title}</Card.Title>
-                  <p className="small">Authors: {book.authors.join(', ')}</p>
+                  <p className="small">Authors: {book.authors.join(", ")}</p>
                   <Card.Text>{book.description}</Card.Text>
-                  <Button
-                    className="btn-block btn-danger"
-                    onClick={() => handleDeleteBook(book.bookId)}
-                  >
-                    Delete this Book!
-                  </Button>
+
+                  <div className="d-flex flex-column">
+                    {/* Google Books Link */}
+                    <a
+                      href={book.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-info mb-2"
+                    >
+                      View on Google Books
+                    </a>
+
+                    {/* Remove Button */}
+                    <Button
+                      className="btn btn-danger"
+                      onClick={() => handleDeleteBook(book.bookId)}
+                    >
+                      Remove this Book
+                    </Button>
+                  </div>
                 </Card.Body>
               </Card>
             </Col>
