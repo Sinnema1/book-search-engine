@@ -21,7 +21,7 @@ const startApolloServer = async () => {
   const app = express();
 
   // Add CORS middleware
-  app.use(cors({ origin: 'http://localhost:3000' })); // Allow requests from your frontend origin
+  app.use(cors({ origin: 'http://localhost:3000' })); // Allow requests from your frontend
 
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
