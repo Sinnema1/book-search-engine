@@ -8,12 +8,11 @@ import { typeDefs, resolvers } from './schema/index.js';
 import { authenticateToken } from './services/auth.js';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
+import { promises as fs } from 'fs';
 
-// Resolve __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Create Apollo Server instance
 const server = new ApolloServer({
   typeDefs,
   resolvers,
@@ -61,20 +60,28 @@ const startApolloServer = async () => {
       console.log(`Resolved clientPath: ${clientPath}`);
 
       // Check if the React build directory and index.html exist
-      const fs = require('fs');
-      if (!fs.existsSync(clientPath)) {
-        console.error(`Error: Directory ${clientPath} does not exist.`);
-      } else if (!fs.existsSync(path.join(clientPath, 'index.html'))) {
-        console.error(`Error: File ${path.join(clientPath, 'index.html')} does not exist.`);
-      } else {
+      try {
+        const clientDirExists = await fs.stat(clientPath);
+        if (!clientDirExists.isDirectory()) {
+          console.error(`Error: ${clientPath} is not a directory.`);
+          return;
+        }
+
+        const indexFileExists = await fs.stat(path.join(clientPath, 'index.html'));
+        if (!indexFileExists.isFile()) {
+          console.error(`Error: index.html does not exist in ${clientPath}.`);
+          return;
+        }
+
         console.log('React build files found.');
+        app.use(express.static(clientPath));
+
+        app.get('*', (_req: Request, res: Response) => {
+          res.sendFile(path.join(clientPath, 'index.html'));
+        });
+      } catch (error: any) {
+        console.error(`Error verifying client files: ${error.message}`);
       }
-
-      app.use(express.static(clientPath));
-
-      app.get('*', (_req: Request, res: Response) => {
-        res.sendFile(path.join(clientPath, 'index.html'));
-      });
     }
 
     // Health check endpoint
