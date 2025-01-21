@@ -25,7 +25,7 @@ const startApolloServer = async () => {
   const app = express();
 
   // Add CORS middleware
-  app.use(cors({ origin: 'http://localhost:3000' })); // Allow requests from your frontend
+  app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' })); // Use env variable for frontend URL
 
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
@@ -51,10 +51,12 @@ const startApolloServer = async () => {
   );
 
   if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client/dist')));
+    // Serve React build files in production
+    const clientPath = path.join(__dirname, '../../../client/dist');
+    app.use(express.static(clientPath));
 
     app.get('*', (_req: Request, res: Response) => {
-      res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+      res.sendFile(path.join(clientPath, 'index.html'));
     });
   }
 
