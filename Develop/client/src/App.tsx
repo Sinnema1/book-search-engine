@@ -8,7 +8,8 @@ import { setContext } from '@apollo/client/link/context';
 
 // Construct the GraphQL API endpoint
 const httpLink = createHttpLink({
-  uri: 'https://book-search-engine-svsx.onrender.com/graphql', // Updated to deployed URL
+  // uri: 'http://localhost:3001/graphql', // local server URL
+  uri: 'https://book-search-engine-svsx.onrender.com/graphql', // deployed URL
 });
 
 // Middleware to attach JWT token to requests

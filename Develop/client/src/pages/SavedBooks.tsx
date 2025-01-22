@@ -7,7 +7,7 @@ import { removeBookId } from "../utils/localStorage";
 
 const SavedBooks = () => {
   const { data, loading, error } = useQuery(GET_ME, {
-    fetchPolicy: "network-only", // Ensures fresh data is fetched on every load
+    fetchPolicy: "no-cache",
   });
   const [removeBook] = useMutation(REMOVE_BOOK);
 
@@ -43,7 +43,7 @@ const SavedBooks = () => {
     }
   };
 
-  // Show loading spinner or error messages
+  // loading spinner or error messages
   if (loading) return <h2>Loading...</h2>;
   if (error) return <h2>Error: {error.message}</h2>;
 
