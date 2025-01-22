@@ -61,7 +61,7 @@ const SearchBooks = () => {
     if (!bookToSave) return;
 
     // Remove __typename field
-    //const { __typename, ...sanitizedBook } = bookToSave;
+    const { __typename, ...sanitizedBook } = bookToSave;
 
     const token = Auth.loggedIn() ? Auth.getToken() : null;
     if (!token) {
@@ -70,7 +70,7 @@ const SearchBooks = () => {
 
     try {
       await saveBook({
-        variables: { input: bookToSave },
+        variables: { input: sanitizedBook },
       });
 
       // Update savedBookIds after saving the book
