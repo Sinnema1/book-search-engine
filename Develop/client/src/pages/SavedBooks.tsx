@@ -1,115 +1,86 @@
-import { useQuery, useMutation } from "@apollo/client";
-import { Container, Card, Button, Row, Col } from "react-bootstrap";
+import { useQuery, useMutation } from '@apollo/client';
+import { Container, Card, Button, Row, Col, Spinner } from 'react-bootstrap';
 
-import { GET_ME } from "../utils/queries";
-import { REMOVE_BOOK } from "../utils/mutations";
-import { removeBookId } from "../utils/localStorage";
+import { GET_ME } from '../utils/queries';
+import { REMOVE_BOOK } from '../utils/mutations';
 
 const SavedBooks = () => {
-  const { data, loading, error } = useQuery(GET_ME, {
-    fetchPolicy: "no-cache",
-  });
+  // Fetch user data including saved books
+  const { loading, data, refetch } = useQuery(GET_ME); // Refetch after mutation to update the UI
   const [removeBook] = useMutation(REMOVE_BOOK);
 
-  // Function to delete a saved book
+  // Extract saved books from query data
+  const savedBooks = data?.me?.savedBooks || [];
+
+  // Handle book removal
   const handleDeleteBook = async (bookId: string) => {
     try {
-      const { data } = await removeBook({
+      // Call mutation to remove book from server
+      await removeBook({
         variables: { bookId },
-        update(cache) {
-          const existingData: any = cache.readQuery({ query: GET_ME });
-          if (existingData?.me?.savedBooks) {
-            const updatedBooks = existingData.me.savedBooks.filter(
-              (book: { bookId: string }) => book.bookId !== bookId
-            );
-            cache.writeQuery({
-              query: GET_ME,
-              data: {
-                me: {
-                  ...existingData.me,
-                  savedBooks: updatedBooks,
-                },
-              },
-            });
-          }
-        },
       });
 
-      if (data?.removeBook) {
-        removeBookId(bookId);
-      }
+      // Refetch data to update the UI with the latest saved books
+      refetch();
     } catch (err) {
-      console.error("Error removing book:", err);
+      console.error('Error removing book:', err);
     }
   };
 
-  // loading spinner or error messages
-  if (loading) return <h2>Loading...</h2>;
-  if (error) return <h2>Error: {error.message}</h2>;
-
-  const userData = data?.me;
+  // Display loading state while fetching data
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center pt-5">
+        <Spinner animation="border" role="status" />
+        <span className="ms-2">Loading...</span>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div className="text-light bg-dark p-5">
-        <Container>
-          <h1>
-            {userData?.username
-              ? `Viewing ${userData.username}'s saved books!`
-              : "Viewing saved books!"}
-          </h1>
-        </Container>
-      </div>
-      <Container>
-        <h2 className="pt-5">
-          {userData?.savedBooks?.length
-            ? `Viewing ${userData.savedBooks.length} saved ${
-                userData.savedBooks.length === 1 ? "book" : "books"
-              }:`
-            : "You have no saved books!"}
-        </h2>
-        <Row>
-          {userData.savedBooks.map((book: any) => (
-            <Col md="4" key={book.bookId}>
-              <Card border="dark">
-                {book.image && (
-                  <Card.Img
-                    src={book.image}
-                    alt={`The cover for ${book.title}`}
-                    variant="top"
-                  />
-                )}
-                <Card.Body>
-                  <Card.Title>{book.title}</Card.Title>
-                  <p className="small">Authors: {book.authors.join(", ")}</p>
-                  <Card.Text>{book.description}</Card.Text>
-
-                  <div className="d-flex flex-column">
-                    {/* Google Books Link */}
-                    <a
-                      href={book.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-info mb-2"
-                    >
-                      View on Google Books
-                    </a>
-
-                    {/* Remove Button */}
-                    <Button
-                      className="btn btn-danger"
-                      onClick={() => handleDeleteBook(book.bookId)}
-                    >
-                      Remove this Book
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </Container>
-    </>
+    <Container>
+      <h2 className="pt-5">
+        {savedBooks.length
+          ? `You have ${savedBooks.length} saved books:`
+          : 'You have no saved books!'}
+      </h2>
+      <Row>
+        {/* Map over savedBooks array to render each book */}
+        {savedBooks.map((book: any) => (
+          <Col md="4" key={book.bookId}>
+            <Card border="dark">
+              {book.image && (
+                <Card.Img
+                  src={book.image}
+                  alt={`The cover for ${book.title}`}
+                  variant="top"
+                />
+              )}
+              <Card.Body>
+                <Card.Title>{book.title}</Card.Title>
+                <p className="small">Authors: {book.authors.join(', ')}</p>
+                <Card.Text>{book.description}</Card.Text>
+                <Button
+                  as="a"
+                  href={book.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-block btn-secondary mb-2"
+                >
+                  View on Google Books
+                </Button>
+                <Button
+                  className="btn-block btn-danger"
+                  onClick={() => handleDeleteBook(book.bookId)}
+                >
+                  Remove this Book
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    </Container>
   );
 };
 
