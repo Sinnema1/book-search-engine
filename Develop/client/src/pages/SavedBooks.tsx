@@ -48,7 +48,7 @@ const SavedBooks = () => {
         {/* Map over savedBooks array to render each book */}
         {savedBooks.map((book: any) => (
           <Col md="4" key={book.bookId}>
-            <Card border="dark">
+            <Card border="dark" className="mb-4">
               {book.image && (
                 <Card.Img
                   src={book.image}
@@ -60,21 +60,23 @@ const SavedBooks = () => {
                 <Card.Title>{book.title}</Card.Title>
                 <p className="small">Authors: {book.authors.join(', ')}</p>
                 <Card.Text>{book.description}</Card.Text>
-                <Button
-                  as="a"
-                  href={book.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-block btn-secondary mb-2"
-                >
-                  View on Google Books
-                </Button>
-                <Button
-                  className="btn-block btn-danger"
-                  onClick={() => handleDeleteBook(book.bookId)}
-                >
-                  Remove this Book
-                </Button>
+                <div className="d-grid gap-2">
+                  <Button
+                    as="a"
+                    href={book.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="secondary"
+                  >
+                    View on Google Books
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleDeleteBook(book.bookId)}
+                  >
+                    Remove this Book
+                  </Button>
+                </div>
               </Card.Body>
             </Card>
           </Col>
